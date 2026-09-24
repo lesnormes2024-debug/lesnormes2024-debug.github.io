@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f2a43">
+  <title>Audit Normes — Comprendre • Apprendre • Vérifier • Appliquer</title>
+  <meta name="description" content="Application pédagogique dédiée aux Normes internationales d'audit interne 2024 : explorer, vérifier, tester et appliquer.">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230f2a43'/><path d='M30 52l14 14 26-30' stroke='%232dd4bf' stroke-width='10' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Google AdSense — vérification du site (éditeur ca-pub-2797254259993125) -->
+  <meta name="google-adsense-account" content="ca-pub-2797254259993125">
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2797254259993125"
+       crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="app">
+    <aside id="sidebar" aria-label="Menu principal">
+      <a class="brand" href="#/">
+        <span class="brand-mark">AN</span>
+        <span class="brand-txt"><strong>Audit Normes</strong><small>Comprendre • Apprendre • Vérifier • Appliquer</small></span>
+      </a>
+      <nav id="nav"></nav>
+      <div class="side-foot">
+        <button id="theme-btn" class="ghost-btn" title="Changer de thème">☀️ Light</button>
+        <p class="src-note">Source : Normes internationales d'audit interne 2024 – IIA</p>
+      </div>
+    </aside>
+    <main id="main">
+      <header id="topbar">
+        <button id="menu-btn" class="icon-btn" aria-label="Menu">☰</button>
+        <a class="top-brand" href="#/">Audit Normes</a>
+        <button id="search-btn" class="search-pill">🔎 Rechercher…</button>
+        <button id="profile-btn" class="avatar" title="Profil / Paramètres">👤</button>
+      </header>
+      <div id="view" class="view"></div>
+      <nav id="bottomnav" aria-label="Navigation mobile"></nav>
+    </main>
+  </div>
+  <div id="modal-root"></div>
+  <script src="vendor/jspdf.umd.min.js"></script>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
