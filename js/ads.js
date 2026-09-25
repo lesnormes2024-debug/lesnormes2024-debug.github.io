@@ -10,6 +10,11 @@ export const ADMOB_IDS = {
   bannerId: "ca-app-pub-7718254448313018/4170648984",    // Bloc bannière
 };
 
+// Google AdSense — site web (adsense.google.com). Script + meta déjà dans index.html.
+export const ADSENSE_CLIENT = "ca-pub-2797254259993125";
+// Numéro data-ad-slot à copier ici après création du bloc d'annonce dans AdSense.
+export const ADSENSE_AD_SLOT = "";
+
 // Initialisation au démarrage de l'app (natif uniquement)
 export async function initAds() {
   if (!isNative()) return; // en web, seule la bannière d'information est affichée par updateAds()
@@ -53,16 +58,32 @@ export async function updateAds() {
     await showNativeBanner();
     return;
   }
-  // — Bannière d'information (web) —
+  // — Publicité web : Google AdSense (affichage réel dès que le compte est validé) —
   document.getElementById("ad-root")?.remove();
-  const el = document.createElement("a");
-  el.id = "ad-root";
-  el.className = "ad-banner";
-  el.href = "#/premium";
-  el.innerHTML = `<span class="ad-ico">📢</span>
-    <span class="ad-txt"><b>Application gratuite</b> — financée par la publicité.
-    ❤️ <u>Soutenir le projet avec un don</u></span>`;
-  document.getElementById("main").appendChild(el);
+  const wrap = document.createElement("div");
+  wrap.id = "ad-root";
+  wrap.className = "ad-banner";
+  if (ADSENSE_AD_SLOT) {
+    // Bloc d'annonce display responsive (AdSense) — inséré comme le ferait AdSense.
+    wrap.innerHTML = `<ins class="adsbygoogle" style="display:block;width:100%;max-width:728px;height:60px"
+      data-ad-client="${ADSENSE_CLIENT}" data-ad-slot="${ADSENSE_AD_SLOT}"
+      data-ad-format="horizontal" data-full-width-responsive="true"></ins>`;
+    document.getElementById("main").appendChild(wrap);
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch (e) {
+      console.warn("AdSense push:", e?.message || e);
+    }
+  } else {
+    // Tant que le compte AdSense n'est pas validé : bannière d'information.
+    const el = document.createElement("a");
+    el.href = "#/premium";
+    el.innerHTML = `<span class="ad-ico">📢</span>
+      <span class="ad-txt"><b>Application gratuite</b> — financée par la publicité.
+      ❤️ <u>Soutenir le projet avec un don</u></span>`;
+    wrap.appendChild(el);
+    document.getElementById("main").appendChild(wrap);
+  }
 }
 
 export function removeAds() {
