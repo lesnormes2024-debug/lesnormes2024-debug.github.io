@@ -1,5 +1,9 @@
-// État utilisateur persistant (localStorage) — prêt pour migration vers Supabase/auth multi-utilisateurs.
+// État utilisateur persistant (localStorage) — version 100 % gratuite.
+// Progression locale uniquement : rien ne quitte l'appareil.
+// Comptes locaux : plusieurs personnes sur le même appareil, chacune sa progression.
 const KEY = "audit_normes_state_v1";
+const PROFILES_KEY = "audit_normes_profiles";
+const ACTIVE_KEY = "audit_normes_active_profile";
 
 const defaults = () => ({
   theme: null,             // null = suit le système
@@ -12,23 +16,79 @@ const defaults = () => ({
   badges: [],              // ids de badges
   daily: {},               // {date:'YYYY-MM-DD', num}
   contentStatus: {},       // overrides admin {stdNum: 'DRAFT'|'REVIEW'|'APPROVED'|'PUBLISHED'}
-  premium: false,          // accès Premium (achat sécurisé)
-  premiumSince: null,      // ts d'activation
-  packs: {},               // achats à l'unité débloqués { checklistQuiz: true, ... }
-  exportCredits: 0,        // crédits d'export PDF/Excel restants
-  trial: { clKeys: [], qKeys: [] }, // essais gratuits utilisés (check-lists / quiz)
 });
-
-const FREE_TRIAL_LIMIT = 3;
 
 export let state = load();
 
+// ——— Comptes locaux (sur l'appareil uniquement) ———
+// Chaque profil possède son propre espace de stockage local. Le mot de passe
+// sert uniquement à empêcher un changement de profil accidentel : il est
+// enregistré sur l'appareil, jamais transmis sur Internet.
+export function listProfiles() {
+  try { return JSON.parse(localStorage.getItem(PROFILES_KEY) || "[]"); } catch { return []; }
+}
+export function activeProfile() {
+  try { return JSON.parse(localStorage.getItem(ACTIVE_KEY) || "null"); } catch { return null; }
+}
+function stateKey() {
+  const p = activeProfile();
+  return p ? `${KEY}__${p.id}` : KEY;
+}
+function hashPass(pass) {
+  // Hachage simple (pas de sécurité cryptographique — usage local uniquement).
+  let h = 5381;
+  const s = "an::" + pass;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return String(h);
+}
+export function createProfile(name, pass) {
+  name = String(name || "").trim();
+  if (name.length < 2) throw new Error("Le nom doit contenir au moins 2 caractères.");
+  if (!pass || String(pass).length < 4) throw new Error("Le mot de passe doit contenir au moins 4 caractères.");
+  const profiles = listProfiles();
+  if (profiles.some((p) => p.name.toLowerCase() === name.toLowerCase())) throw new Error("Ce nom de profil existe déjà sur cet appareil.");
+  const id = "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  profiles.push({ id, name, hash: hashPass(pass), created: Date.now() });
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+  localStorage.setItem(ACTIVE_KEY, JSON.stringify({ id, name }));
+  save(); // sauvegarde de l'état courant (invité) avant de basculer
+  state = defaults();
+  save();
+  return { id, name };
+}
+export function loginProfile(name, pass) {
+  const p = listProfiles().find((x) => x.name.toLowerCase() === String(name || "").trim().toLowerCase());
+  if (!p) throw new Error("Aucun profil à ce nom sur cet appareil.");
+  if (p.hash !== hashPass(pass)) throw new Error("Mot de passe incorrect.");
+  save(); // sauvegarde de l'état courant avant de basculer
+  localStorage.setItem(ACTIVE_KEY, JSON.stringify({ id: p.id, name: p.name }));
+  state = load();
+  save();
+  return p;
+}
+export function logoutProfile() {
+  save();
+  localStorage.removeItem(ACTIVE_KEY);
+  state = load();
+  save();
+}
+export function deleteProfile(id, pass) {
+  const profiles = listProfiles();
+  const p = profiles.find((x) => x.id === id);
+  if (!p) throw new Error("Profil introuvable.");
+  if (p.hash !== hashPass(pass)) throw new Error("Mot de passe incorrect.");
+  const next = profiles.filter((x) => x.id !== id);
+  localStorage.setItem(PROFILES_KEY, JSON.stringify(next));
+  localStorage.removeItem(`${KEY}__${id}`); // suppression des données locales du profil
+  if (activeProfile()?.id === id) logoutProfile();
+}
+
 function load() {
-  try { return { ...defaults(), ...JSON.parse(localStorage.getItem(KEY) || "{}") }; }
+  try { return { ...defaults(), ...JSON.parse(localStorage.getItem(stateKey()) || "{}") }; }
   catch { return defaults(); }
 }
 
-export function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+export function save() { localStorage.setItem(stateKey(), JSON.stringify(state)); }
 
 export function mutate(fn) { fn(state); save(); }
 
@@ -89,49 +149,18 @@ export function clStats(items, key) {
   return st;
 }
 
-// ——— Premium & achats ———
-// Achat sécurisé uniquement : tunnel PayPal côté serveur (voir js/billing.js).
-// Pas de codes d'activation. Pack à l'unité + crédits d'export.
-export const isPremium = () => !!state.premium;
-export function grantPremium() {
-  mutate((s) => { s.premium = true; s.premiumSince = Date.now(); });
-}
-
-export const hasChecklistQuiz = () => isPremium() || !!state.packs.checklistQuiz;
-export function grantPack(name) {
-  mutate((s) => { s.packs = { ...s.packs, [name]: true }; });
-}
-
-// ——— Essais gratuits (check-lists / quiz) ———
-export const TRIAL_LIMIT = FREE_TRIAL_LIMIT;
-export const checklistTrialsLeft = () => Math.max(0, FREE_TRIAL_LIMIT - state.trial.clKeys.length);
-export const quizTrialsLeft = () => Math.max(0, FREE_TRIAL_LIMIT - state.trial.qKeys.length);
-export const canTryChecklist = (key) => hasChecklistQuiz() || state.trial.clKeys.includes(key) || state.trial.clKeys.length < FREE_TRIAL_LIMIT;
-export const canTryQuiz = (cat) => hasChecklistQuiz() || state.trial.qKeys.includes(cat) || state.trial.qKeys.length < FREE_TRIAL_LIMIT;
-// Retourne true si l'accès est accordé (et consomme l'essai si nécessaire).
-export function useChecklistSlot(key) {
-  if (canTryChecklist(key)) {
-    if (!hasChecklistQuiz() && !state.trial.clKeys.includes(key)) mutate((s) => { s.trial.clKeys.push(key); });
-    return true;
-  }
-  return false;
-}
-export function useQuizSlot(cat) {
-  if (canTryQuiz(cat)) {
-    if (!hasChecklistQuiz() && !state.trial.qKeys.includes(cat)) mutate((s) => { s.trial.qKeys.push(cat); });
-    return true;
-  }
-  return false;
-}
-
-// ——— Crédits d'export PDF/Excel ———
-// Premium : exports illimités inclus. Sinon : 1 achat = 1 export.
-export function useExportCredit() {
-  if (isPremium()) return true;
-  if ((state.exportCredits || 0) > 0) { mutate((s) => { s.exportCredits--; }); return true; }
-  return false;
-}
-export function addExportCredits(n = 1) { mutate((s) => { s.exportCredits = (s.exportCredits || 0) + n; }); }
+// ——— Version 100 % gratuite ———
+// Tout est débloqué pour tous : check-lists, quiz, cas pratiques, assistant,
+// exports PDF/Excel illimités. Financement : publicité + dons (page Soutenir).
+// Les fonctions ci-dessous sont conservées pour compatibilité avec l'interface.
+export const isPremium = () => false;
+export const hasChecklistQuiz = () => true;
+export function grantPremium() { /* plus d'achat : tout est gratuit */ }
+export function grantPack() { /* plus d'achat : tout est gratuit */ }
+export function useChecklistSlot() { return true; }
+export function useQuizSlot() { return true; }
+export function useExportCredit() { return true; }
+export function addExportCredits() { /* plus de crédits : illimité */ }
 
 // Quiz
 export function saveQuizResult(cat, score, total, missed) { mutate((s) => {

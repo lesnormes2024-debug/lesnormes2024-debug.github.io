@@ -328,6 +328,10 @@ input[type=checkbox].big { width: 18px; height: 18px; accent-color: var(--teal);
 }
 .prem-modal { max-width: 420px; width: 100%; animation: fadeUp .25s ease both; }
 
+/* ——— Bouton de don PayPal : éviter l'écrasement (texte vertical) ——— */
+.paypal-donate { text-align: center; }
+.paypal-donate iframe { width: 100% !important; max-width: 400px !important; min-height: 60px !important; }
+
 /* ——— Publicité (version gratuite) ——— */
 .ad-banner {
   position: fixed; left: 0; right: 0; z-index: 45;

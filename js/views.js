@@ -52,12 +52,11 @@ export function home(el, go) {
     <a class="card action-card stagger" href="#/checklists"><span class="ico">✅</span><span><b>VÉRIFIER</b><span>Utiliser les check-lists.</span></span></a>
     <a class="card action-card stagger" href="#/quiz"><span class="ico">🧠</span><span><b>TESTER</b><span>Faire un quiz.</span></span></a>
   </div>
-  ${!S.isPremium() ? `
   <a class="card pad prem-banner stagger" href="#/premium" style="margin-top:14px;display:block">
-    <span class="prem-crown small">👑</span>
-    <span><b>Audit Normes Premium</b><span>Check-lists et quiz illimités, exports PDF/Excel, cas pratiques et assistant — 12,99 € accès à vie.</span></span>
-    <span class="btn primary small" style="margin-left:auto">Découvrir →</span>
-  </a>` : ""}
+    <span class="prem-crown small">❤️</span>
+    <span><b>Audit Normes est 100 % gratuite</b><span>Soutenez le projet avec un don volontaire — financez la pub et le développement.</span></span>
+    <span class="btn primary small" style="margin-left:auto">Faire un don →</span>
+  </a>
   <h2 class="sec">Continuer votre apprentissage</h2>
   <div class="grid g2">
     <div class="card pad stagger">
@@ -265,17 +264,16 @@ function checklistBody(el, scope, ref, title, items, extra) {
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
       <button class="btn soft" id="cl-exp-pdf">⬇️ Exporter en PDF</button>
       <button class="btn soft" id="cl-exp-xlsx">📊 Exporter en Excel</button>
-      ${!S.isPremium() ? `<span class="small muted" style="align-self:center">${S.state.exportCredits > 0 ? S.state.exportCredits + " export(s) disponible(s)" : "Export : 0,99 € l'unité — <a href='#/premium' style='color:var(--teal)'>inclus dans Premium</a>"}</span>` : ""}
+      <span class="small muted" style="align-self:center">Exports illimités et gratuits ❤️</span>
     </div>
     ${srcNote("")}
   </div>`;
   el.querySelectorAll(".opts").forEach((g) => g.querySelectorAll(".opt").forEach((b) => b.onclick = () => {
-    if (!S.useChecklistSlot(key)) { paywallPack(); return; }
     S.setAnswer(key, +g.dataset.i, b.dataset.v); checklistBody(el, scope, ref, title, items, extra);
   }));
   el.querySelectorAll("textarea.note").forEach((t) => t.onchange = () => S.setNote(key, +t.dataset.i, t.value));
 
-  // Exports PDF / Excel (Premium : inclus — sinon 1 crédit 0,99 €).
+  // Exports PDF / Excel — illimités et gratuits.
   const rows = items.map((q, i) => [String(i + 1), q.q || q, X.CL_LABEL[c.answers[i]] || "Sans réponse", c.notes[i] || ""]);
   el.querySelector("#cl-exp-pdf").onclick = () => X.gatedPdf({
     name: "checklist-" + ref,
@@ -302,10 +300,6 @@ export function checklists(el) {
   el.innerHTML = `
   <h1 style="font-size:24px">Check-lists</h1>
   <p class="muted" style="margin:6px 0 18px">Vérifiez vos pratiques norme par norme, puis évaluez votre fonction d'audit interne.</p>
-  ${!S.hasChecklistQuiz() ? `<div class="card pad" style="margin-bottom:18px;border-left:4px solid var(--teal)">
-    <b>✅ ${S.checklistTrialsLeft()} check-list(s) d'essai restante(s)</b>
-    <p class="small muted" style="margin:4px 0 0">Accès illimité avec le pack Check-lists & quiz (2,99 €) ou <a href="#/premium" style="color:var(--teal)">Premium</a>.</p>
-  </div>` : ""}
   <div class="card pad" style="margin-bottom:18px">
     <b>🎯 Évaluer ma fonction d'audit interne</b>
     <p class="small muted" style="margin:6px 0 12px">Vue consolidée des check-lists par domaine (auto-évaluation indicative).</p>
@@ -347,10 +341,6 @@ export function quizHome(el) {
   el.innerHTML = `
   <h1 style="font-size:24px">Quiz</h1>
   <p class="muted" style="margin:6px 0 16px">Chaque question est vérifiable à partir du référentiel. Après chaque réponse : explication et référence à la norme.</p>
-  ${!S.hasChecklistQuiz() ? `<div class="card pad" style="margin-bottom:16px;border-left:4px solid var(--teal)">
-    <b>🧠 ${S.quizTrialsLeft()} quiz d'essai restant(s)</b>
-    <p class="small muted" style="margin:4px 0 0">Quiz illimités avec le pack Check-lists & quiz (2,99 €) ou <a href="#/premium" style="color:var(--teal)">Premium</a>.</p>
-  </div>` : ""}
   <div class="grid g2">${cats.map(([k, t, d]) => {
     const n = allQuestions(filter[k]).length;
     return `<a class="card action-card stagger" href="#/quiz/run/${k}" data-f="${k}"><span class="ico">${t.split(" ")[0]}</span><span><b>${esc(t.slice(t.indexOf(" ") + 1))}</b><span>${esc(d)} · ${n} questions disponibles</span></span></a>`;
@@ -369,13 +359,6 @@ const FILTERS = {
 
 export function quizRun(el, cat, num) {
   const slotCat = cat === "std" ? "std:" + num : cat;
-  if (!S.canTryQuiz(slotCat)) {
-    el.innerHTML = `<div class="crumbs"><a href="#/quiz">Quiz</a> › <b>Quiz verrouillé</b></div>` +
-      lockedCard("Quiz — essais gratuits terminés", "Vos 3 quiz d'essai sont utilisés. Débloquez les quiz illimités (et les check-lists) avec le pack à 2,99 €, ou passez Premium pour tout inclure.");
-    paywallPack();
-    return;
-  }
-  S.useQuizSlot(slotCat);
   let qs = allQuestions(FILTERS[cat] ? (s, q) => FILTERS[cat](s, cat === "std" ? num : q) : () => true);
   if (cat === "std") qs = allQuestions((s) => s.num === num);
   qs = shuffle(qs).slice(0, 10);
@@ -514,7 +497,7 @@ function caseCard(c) {
   </div>`;
 }
 
-// ————— PREMIUM : helpers —————
+// ————— Soutenir : helpers —————
 export function lockedCard(title, desc) {
   return `
   <div class="empty">
@@ -527,31 +510,7 @@ export function lockedCard(title, desc) {
   </div>`;
 }
 
-// Fenêtre "essais épuisés" : achat du pack 2,99 € ou Premium.
-function paywallPack() {
-  const root = document.querySelector("#modal-root");
-  root.innerHTML = `
-  <div class="prem-modal-mask">
-    <div class="card pad prem-modal">
-      <b>🔓 Essais gratuits terminés</b>
-      <p class="small muted" style="margin:6px 0 12px">Vos 3 essais gratuits sont utilisés. Débloquez l'accès illimité aux check-lists et aux quiz :</p>
-      <button class="btn primary" id="pw-pack" style="width:100%">Check-lists & quiz illimités — 2,99 €</button>
-      <a class="btn soft" href="#/premium" id="pw-prem" style="width:100%;margin-top:8px;text-align:center">Ou découvrir Premium — 12,99 € à vie 👑</a>
-      <button class="btn soft" id="pw-close" style="margin-top:12px">Plus tard</button>
-    </div>
-  </div>`;
-  const close = () => { root.innerHTML = ""; };
-  root.querySelector("#pw-close").onclick = close;
-  root.querySelector(".prem-modal-mask").onclick = (e) => { if (e.target.classList.contains("prem-modal-mask")) close(); };
-  root.querySelector("#pw-prem").onclick = close;
-  root.querySelector("#pw-pack").onclick = async () => {
-    const err = await B.purchasePack();
-    if (err && err !== "cancelled") alert("Le paiement n'a pas abouti. Vérifiez votre connexion et réessayez." + (err === "sdk-missing" ? "" : " Détail : " + err));
-  };
-}
-
 export function casesView(el) {
-  if (!S.isPremium()) { el.innerHTML = `<div class="crumbs"><a href="#/">Accueil</a> › <b>Cas pratiques</b></div>` + lockedCard("Cas pratiques — réservé au Premium", "Entraînez-vous avec des situations professionnelles classées par difficulté, raisonnements détaillés et normes associées. Passez au Premium pour débloquer les 10 cas pratiques."); return; }
   el.innerHTML = `<h1 style="font-size:24px">Cas pratiques</h1>
   <p class="muted" style="margin:6px 0 16px">Des situations professionnelles pour appliquer les Normes, par difficulté croissante. Contenu pédagogique original, fondé sur le référentiel.</p>
   <div class="grid">${CASES.map(caseCard).join("")}</div>`;
@@ -652,7 +611,7 @@ export function progressView(el) {
   <div class="card pad" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <button class="btn soft" id="pg-exp-pdf">⬇️ Rapport PDF</button>
     <button class="btn soft" id="pg-exp-xlsx">📊 Rapport Excel</button>
-    ${!S.isPremium() ? `<span class="small muted">${S.state.exportCredits > 0 ? S.state.exportCredits + " export(s) disponible(s)" : "Export : 0,99 € l'unité — <a href='#/premium' style='color:var(--teal)'>inclus dans Premium</a>"}</span>` : ""}
+    <span class="small muted">Exports illimités et gratuits ❤️</span>
   </div>`;
   const progRows = () => {
     const avgRows = [];
@@ -693,7 +652,7 @@ export function favoritesView(el) {
   <div class="card pad" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
     <button class="btn soft" id="fv-exp-pdf">⬇️ PDF</button>
     <button class="btn soft" id="fv-exp-xlsx">📊 Excel</button>
-    ${!S.isPremium() ? `<span class="small muted">${S.state.exportCredits > 0 ? S.state.exportCredits + " export(s) disponible(s)" : "Export : 0,99 € l'unité — <a href='#/premium' style='color:var(--teal)'>inclus dans Premium</a>"}</span>` : ""}
+    <span class="small muted">Exports illimités et gratuits ❤️</span>
   </div>`;
   const favRows = () => [
     ["Type", "Référence", "Titre / Définition"],
@@ -716,7 +675,7 @@ export function favoritesView(el) {
 
 // ————— ASSISTANT —————
 export function assistantView(el) {
-  if (!S.isPremium()) { el.innerHTML = `<div class="crumbs"><a href="#/">Accueil</a> › <b>Assistant</b></div>` + lockedCard("Assistant — réservé au Premium", "Posez vos questions en langage naturel : l'assistant analyse le référentiel et vous oriente vers les bonnes normes, explications et preuves. Débloquez-le avec Premium."); return; }
+  // Assistant gratuit — analyse locale du référentiel.
   el.innerHTML = `
   <h1 style="font-size:24px">🤖 Demandez aux Normes</h1>
   <p class="muted" style="margin:6px 0 14px">L'assistant répond <b>uniquement</b> à partir du référentiel chargé. Il ne peut pas inventer de référence.</p>
@@ -844,8 +803,9 @@ export function settingsView(el) {
     </div>
   </div>
   <div class="card pad" style="margin-top:14px">
-    <b>Profil</b>
-    <p class="small muted" style="margin:6px 0">Visiteur / Utilisateur — données stockées localement sur cet appareil. L'architecture prévoit l'authentification (email + Google) et la synchronisation multi-appareils via Supabase.</p>
+    <b>Profil — comptes locaux</b>
+    <p class="small muted" style="margin:6px 0">Créez un compte <b>sur cet appareil uniquement</b> : chaque personne du foyer (PC ou téléphone) garde sa propre progression, ses favoris et ses check-lists. Rien n'est envoyé sur Internet — la progression reste stockée sur votre appareil.</p>
+    <div id="acc-zone"></div>
     <label style="display:flex;gap:10px;align-items:center;margin-top:8px"><input type="checkbox" class="big" id="adm" ${S.state.admin ? "checked" : ""}> Mode administrateur (back-office)</label>
     <label style="display:flex;gap:10px;align-items:center;margin-top:8px"><input type="checkbox" class="big" id="aud" checked disabled> Auditeur interne</label>
   </div>
@@ -868,6 +828,43 @@ export function settingsView(el) {
     window.applyTheme && window.applyTheme();
     settingsView(el);
   });
+
+  // — Comptes locaux (sur l'appareil uniquement) —
+  const accZone = el.querySelector("#acc-zone");
+  const active = S.activeProfile();
+  const profiles = S.listProfiles();
+  accZone.innerHTML = `
+    <p class="small" style="margin:8px 0 4px"><b>Profil actif :</b> ${active ? esc(active.name) : "Invité (sans compte)"} <span class="muted">— progression enregistrée sur cet appareil</span></p>
+    ${profiles.length ? `<div class="chips" style="margin:6px 0 10px;flex-wrap:wrap">${profiles.map((p) =>
+      `<button class="chip ${active?.id === p.id ? "on" : ""}" data-pid="${p.id}">👤 ${esc(p.name)}</button>`).join("")}
+    </div>` : ""}
+    <details style="margin-top:6px">
+      <summary class="small" style="cursor:pointer;color:var(--teal)">➕ Créer un nouveau compte local</summary>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <input type="text" id="acc-name" placeholder="Nom du profil (ex. Jamal)" style="flex:1;min-width:160px;padding:8px;border:1px solid var(--border);border-radius:8px;background:transparent;color:inherit">
+        <input type="password" id="acc-pass" placeholder="Mot de passe (4+ caractères)" style="flex:1;min-width:160px;padding:8px;border:1px solid var(--border);border-radius:8px;background:transparent;color:inherit">
+        <button class="btn primary" id="acc-create">Créer et activer</button>
+      </div>
+      <p class="small muted" style="margin-top:6px">Le compte et le mot de passe restent sur cet appareil : ils permettent simplement de séparer les progressions et d'éviter un changement de profil accidentel.</p>
+    </details>
+    ${active ? `<button class="btn soft" id="acc-logout" style="margin-top:10px">Se déconnecter (revenir en invité)</button>` : ""}`;
+  accZone.querySelectorAll("[data-pid]").forEach((chip) => chip.onclick = () => {
+    const p = profiles.find((x) => x.id === chip.dataset.pid);
+    const pass = prompt(`Mot de passe du profil « ${p.name} » :`);
+    if (pass === null) return;
+    try { S.loginProfile(p.name, pass); alert(`Bienvenue, ${p.name} ! Progression chargée.`); location.reload(); }
+    catch (e) { alert(e.message); }
+  });
+  const createBtn = accZone.querySelector("#acc-create");
+  if (createBtn) createBtn.onclick = () => {
+    const name = accZone.querySelector("#acc-name").value;
+    const pass = accZone.querySelector("#acc-pass").value;
+    try { const p = S.createProfile(name, pass); alert(`Compte « ${p.name} » créé sur cet appareil. Bonne chance ! 🎉`); location.reload(); }
+    catch (e) { alert(e.message); }
+  };
+  const logoutBtn = accZone.querySelector("#acc-logout");
+  if (logoutBtn) logoutBtn.onclick = () => { S.logoutProfile(); alert("Déconnecté — mode invité. La progression du profil reste enregistrée sur l'appareil."); location.reload(); };
+
   el.querySelector("#adm").onchange = (e) => S.mutate((s) => { s.admin = e.target.checked; });
   el.querySelector("#ex").onclick = () => {
     const blob = new Blob([S.exportData()], { type: "application/json" });
@@ -879,125 +876,53 @@ export function settingsView(el) {
   };
 }
 
-// ————— PREMIUM —————
-export function premiumView(el) {
-  if (S.isPremium()) {
-    el.innerHTML = `
-    <div class="crumbs"><a href="#/">Accueil</a> › <b>Premium</b></div>
-    <div class="prem-hero">
-      <span class="prem-crown">👑</span>
-      <h1 style="font-size:26px">Vous êtes Premium</h1>
-      <p>Merci pour votre soutien ! Toutes les fonctions avancées sont débloquées sur cet appareil.</p>
-      <div class="prem-features">
-        <div class="pf on">🎯 Cas pratiques — 10 situations avec raisonnements</div>
-        <div class="pf on">🤖 Assistant « Demandez aux Normes »</div>
-        <div class="pf on">✅ Check-lists illimitées</div>
-        <div class="pf on">🧠 Quiz illimités</div>
-        <div class="pf on">⬇️ Exports PDF / Excel illimités</div>
-        <div class="pf on">📊 Statistiques avancées de progression</div>
-        <div class="pf on">⭐ Favoris illimités + notes de check-list</div>
-      </div>
-      <a class="btn primary" href="#/cas" style="margin-top:16px">Tester les cas pratiques →</a>
-    </div>
-    <p class="small muted" style="margin-top:12px;text-align:center"><a href="#/confidentialite" style="color:var(--teal)">Politique de confidentialité</a></p>`;
-    return;
-  }
+// ————— SOUTENIR (don volontaire) —————
+export async function premiumView(el) {
   el.innerHTML = `
-  <div class="crumbs"><a href="#/">Accueil</a> › <b>Premium</b></div>
+  <div class="crumbs"><a href="#/">Accueil</a> › <b>Faire un don</b></div>
   <div class="prem-hero">
-    <span class="prem-crown">👑</span>
-    <h1 style="font-size:26px">Audit Normes <span class="prem-badge">Premium</span></h1>
-    <p>Passez à la vitesse supérieure : entraînement intensif, assistant intelligent et suivi avancé.</p>
+    <span class="prem-crown">❤️</span>
+    <h1 style="font-size:26px">Audit Normes est <span class="prem-badge">gratuite</span></h1>
+    <p>Tout le contenu est accessible sans payer : Normes, check-lists illimitées, quiz illimités, cas pratiques, assistant et exports PDF/Excel.</p>
   </div>
 
-  <div class="price-grid">
-    <div class="card pad price-card">
-      <b>Gratuit</b>
-      <div class="price">0 €</div>
-      <div class="prem-features">
-        <div class="pf on">📚 Toutes les Normes et le glossaire</div>
-        <div class="pf on">✅ 3 check-lists d'essai</div>
-        <div class="pf on">🧠 3 quiz d'essai</div>
-        <div class="pf on">📊 Progression de base</div>
-        <div class="pf on">📢 Financée par la publicité</div>
-        <div class="pf off">🎯 Cas pratiques</div>
-        <div class="pf off">🤖 Assistant</div>
-        <div class="pf off">⬇️ Exports PDF/Excel</div>
-      </div>
-      <a class="btn soft" style="margin-top:16px" href="#/normes">Continuer gratuitement</a>
-    </div>
+  <div class="card pad" style="max-width:560px;margin:18px auto 0">
+    <b>💡 Comment le projet est financé</b>
+    <p class="small" style="margin:8px 0 0">L'application est financée par la <b>publicité</b> affichée dans l'application et, si vous le souhaitez, par vos <b>dons volontaires</b>. Un don aide à couvrir l'hébergement, les outils de développement et les nouvelles fonctionnalités (plus de quiz, de cas pratiques, de révisions du contenu).</p>
+  </div>
 
-    <div class="card pad price-card featured">
-      <span class="prem-ribbon">Recommandé</span>
-      <b>Premium — accès à vie</b>
-      <div class="price">12,99 €<small> paiement unique</small></div>
-      <div class="prem-features">
-        <div class="pf on">Tout le contenu gratuit, plus :</div>
-        <div class="pf on">✅ Check-lists illimitées</div>
-        <div class="pf on">🧠 Quiz illimités</div>
-        <div class="pf on">⬇️ Exports PDF / Excel illimités</div>
-        <div class="pf on">🎯 10 cas pratiques avec raisonnements détaillés</div>
-        <div class="pf on">🤖 Assistant « Demandez aux Normes »</div>
-        <div class="pf on">📊 Statistiques avancées et badges exclusifs</div>
-        <div class="pf on">🚫 Aucune publicité</div>
-        <div class="pf on">👑 Badge Premium sur votre profil</div>
-      </div>
-      <button class="btn primary" id="buy" style="margin-top:16px">Achat sécurisé — 12,99 €</button>
-      <p class="small muted" style="margin-top:8px" id="buy-note">Paiement sécurisé via PayPal — compte PayPal ou carte bancaire acceptée. Aucune carte n'est partagée avec l'application.</p>
-    </div>
+  <div class="card pad" style="max-width:560px;margin:14px auto 0;text-align:center">
+    <b>☕ Soutenir Audit Normes</b>
+    <p class="small muted" style="margin:6px 0 14px">Don ponctuel et libre, traité intégralement par PayPal (compte PayPal ou carte bancaire). Aucune carte n'est partagée avec l'application, et le don n'est pas requis pour utiliser l'application.</p>
+    <div id="paypal-container-XG7NF366MDFAG" class="paypal-donate" style="min-height:60px;width:100%;max-width:400px;margin:0 auto"></div>
+    <a class="btn primary" id="donate-fallback" href="${B.PAYPAL_DONATE.fallbackUrl}" target="_blank" rel="noopener" style="min-width:240px">❤️ Faire un don via PayPal</a>
+    <p class="small muted" id="donate-note" style="margin-top:8px">Ouverture de PayPal…</p>
+  </div>
 
-    <div class="card pad price-card">
-      <b>À l'unité</b>
-      <div class="price">2,99 €<small> et 0,99 €</small></div>
-      <div class="prem-features">
-        <div class="pf on">✅ Pack Check-lists & quiz illimités — <b>2,99 €</b></div>
-        <div class="pf on">⬇️ 1 export PDF ou Excel — <b>0,99 €</b></div>
-        <div class="pf off">Cas pratiques et Assistant (Premium uniquement)</div>
-        <div class="pf off">Retrait de la publicité (Premium uniquement)</div>
-      </div>
-      <button class="btn primary" id="buy-pack" style="margin-top:16px">Pack Check-lists & quiz — 2,99 €</button>
-      <button class="btn soft" id="buy-export" style="margin-top:8px;width:100%">1 export PDF/Excel — 0,99 €</button>
-      <p class="small muted" style="margin-top:8px">Paiement unique via PayPal, sans abonnement.</p>
+  <div class="card pad" style="max-width:560px;margin:14px auto 0">
+    <b>✅ Ce qui est inclus, gratuitement</b>
+    <div class="prem-features" style="margin-top:8px">
+      <div class="pf on">📚 Toutes les Normes 2024 et le glossaire</div>
+      <div class="pf on">✅ Check-lists illimitées + exports PDF/Excel</div>
+      <div class="pf on">🧠 Quiz illimités (général, domaines, normes)</div>
+      <div class="pf on">🎯 10 cas pratiques avec raisonnements</div>
+      <div class="pf on">🤖 Assistant « Demandez aux Normes »</div>
+      <div class="pf on">📊 Progression, favoris et comptes locaux</div>
     </div>
   </div>
   <p class="small muted" style="margin-top:12px;text-align:center"><a href="#/confidentialite" style="color:var(--teal)">Politique de confidentialité</a></p>
   ${srcNote("")}`;
-
-  el.querySelector("#buy").onclick = async () => {
-    const btn = el.querySelector("#buy");
-    btn.disabled = true; btn.textContent = "Ouverture de PayPal…";
-    const err = await B.purchasePremium();
-    btn.disabled = false;
-    if (S.isPremium()) {
-      window.updateAds && window.updateAds();
-      premiumView(el);
-      return;
-    }
-    if (err === "checkout-unavailable") {
-      alert("L'achat en ligne sera disponible très prochainement. Merci de votre patience !");
-      return;
-    }
-    if (err === "cancelled") return; // l'utilisateur a fermé la fenêtre PayPal
-    if (err) alert("Le paiement n'a pas abouti. Vérifiez votre connexion et réessayez." + (err === "sdk-missing" ? "" : " Détail : " + err));
-  };
-  el.querySelector("#buy-pack").onclick = async () => {
-    const btn = el.querySelector("#buy-pack");
-    btn.disabled = true; btn.textContent = "Ouverture de PayPal…";
-    const err = await B.purchasePack();
-    btn.disabled = false; btn.textContent = "Pack Check-lists & quiz — 2,99 €";
-    if (S.hasChecklistQuiz()) { alert("Pack activé — check-lists et quiz illimités ! 🎉"); location.reload(); return; }
-    if (err === "cancelled") return;
-    if (err && err !== "busy") alert("Le paiement n'a pas abouti. Vérifiez votre connexion et réessayez." + (err === "sdk-missing" ? "" : " Détail : " + err));
-  };
-  el.querySelector("#buy-export").onclick = async () => {
-    const btn = el.querySelector("#buy-export");
-    btn.disabled = true; btn.textContent = "Ouverture de PayPal…";
-    const err = await B.purchaseExport();
-    btn.disabled = false; btn.textContent = "1 export PDF/Excel — 0,99 €";
-    if ((S.state.exportCredits || 0) > 0) { alert("Crédit d'export ajouté ! Utilisez les boutons d'export des check-lists, de la progression ou des favoris."); location.reload(); return; }
-    if (err === "cancelled") return;
-    if (err && err !== "busy") alert("Le paiement n'a pas abouti. Vérifiez votre connexion et réessayez." + (err === "sdk-missing" ? "" : " Détail : " + err));
-  };
+  // Bouton de secours visible immédiatement (fonctionne partout) ; si le
+  // widget PayPal se charge, on le masque au profit des vrais boutons PayPal.
+  const rendered = await B.renderDonateButton(el.querySelector("#paypal-container-XG7NF366MDFAG"));
+  if (rendered) {
+    el.querySelector("#donate-fallback").style.display = "none";
+    const note = el.querySelector("#donate-note");
+    if (note) note.remove();
+  } else {
+    const note = el.querySelector("#donate-note");
+    if (note) note.textContent = "Si le bouton PayPal ne s'affiche pas ci-dessus, utilisez le bouton ci-dessus : il ouvre la page officielle du don.";
+  }
 }
 
 // ————— POLITIQUE DE CONFIDENTIALITÉ —————
@@ -1029,8 +954,8 @@ export function privacyView(el) {
   </div>
 
   <div class="card pad" style="margin-top:14px">
-    <b>4. Achats</b>
-    <p class="small" style="margin-top:6px">Les achats (Premium 12,99 €, pack Check-lists &amp; quiz 2,99 €, export à l'unité 0,99 €) s'effectuent <b>exclusivement via PayPal</b> : l'ordre de paiement est créé et validé par un serveur (Supabase Edge Functions), et le débit est traité par PayPal. Aucune carte bancaire n'est jamais transmise à Audit Normes. Seules les informations techniques de la transaction (identifiant de commande PayPal, produit acheté) sont enregistrées dans notre base de données pour prouver l'achat ; elles ne contiennent ni carte, ni coordonnées bancaires. Le statut Premium, le pack et les crédits d'export sont mémorisés localement sur votre appareil.</p>
+    <b>4. Publicité et dons</b>
+    <p class="small" style="margin-top:6px">Audit Normes est <b>100 % gratuite</b> : aucun achat intégré. L'application est financée par la publicité (AdMob dans l'app Android, Google AdSense sur le site) et par des <b>dons volontaires</b> via PayPal. Le don est optionnel : PayPal traite le paiement et ne nous transmet pas vos données bancaires. Les utilisateurs Premium historiques (si l'appareil en conserve la trace) ne sont plus sollicités.</p>
   </div>
 
   <div class="card pad" style="margin-top:14px">

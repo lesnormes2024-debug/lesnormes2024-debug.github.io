@@ -1,5 +1,5 @@
-// Publicité — version gratuite financée par la pub ; Premium = aucune pub.
-// En web : emplacement de démonstration. En natif (Capacitor) : bannière AdMob réelle.
+// Publicité — application 100 % gratuite financée par la pub (+ dons volontaires).
+// En web : bannière d'information. En natif (Capacitor) : bannière AdMob réelle.
 import * as S from "./store.js";
 
 export const isNative = () => typeof window.Capacitor !== "undefined";
@@ -12,8 +12,7 @@ export const ADMOB_IDS = {
 
 // Initialisation au démarrage de l'app (natif uniquement)
 export async function initAds() {
-  if (S.isPremium()) return;
-  if (!isNative()) return; // en web, seule la bannière démo est affichée par updateAds()
+  if (!isNative()) return; // en web, seule la bannière d'information est affichée par updateAds()
   try {
     const { AdMob } = window.Capacitor?.Plugins || {};
     if (!AdMob) return;
@@ -50,24 +49,19 @@ async function hideNativeBanner() {
 
 // Appelé par le routeur après chaque rendu de page
 export async function updateAds() {
-  if (S.isPremium()) {
-    document.getElementById("ad-root")?.remove();
-    if (isNative()) await hideNativeBanner();
-    return;
-  }
   if (isNative()) {
     await showNativeBanner();
     return;
   }
-  // — Bannière de démonstration (web) —
+  // — Bannière d'information (web) —
   document.getElementById("ad-root")?.remove();
   const el = document.createElement("a");
   el.id = "ad-root";
   el.className = "ad-banner";
   el.href = "#/premium";
   el.innerHTML = `<span class="ad-ico">📢</span>
-    <span class="ad-txt"><b>Version gratuite</b> — financée par la publicité.
-    Passez au Premium pour retirer les annonces. <u>👑 Découvrir</u></span>`;
+    <span class="ad-txt"><b>Application gratuite</b> — financée par la publicité.
+    ❤️ <u>Soutenir le projet avec un don</u></span>`;
   document.getElementById("main").appendChild(el);
 }
 

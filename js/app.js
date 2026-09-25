@@ -15,7 +15,7 @@ const NAV = [
   ["#/favoris", "⭐", "Mes favoris"],
   ["#/glossaire", "📖", "Glossaire"],
   ["#/assistant", "🤖", "Assistant"],
-  ["#/premium", "👑", "Premium"],
+  ["#/premium", "❤️", "Faire un don"],
   ["#/parametres", "⚙️", "Paramètres"],
 ];
 const BOTTOM = [["#/accueil", "🏠", "Accueil"], ["#/normes", "📚", "Normes"], ["#/recherche", "🔎", "Recherche"], ["#/quiz", "🧠", "Quiz"], ["#/parametres", "👤", "Profil"]];

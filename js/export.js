@@ -1,24 +1,13 @@
 // ——— Exports PDF / Excel (côté navigateur) ———
 // Bibliothèques UMD chargées par index.html : window.jspdf (jsPDF) + window.XLSX (SheetJS).
-// Accès : inclus et illimité pour les Premium ; sinon 1 crédit = 1 export
-// (crédit acheté 0,99 € via le tunnel PayPal de js/billing.js).
+// Version 100 % gratuite : exports illimités pour tous.
 import * as S from "./store.js";
-import * as B from "./billing.js";
 
 const libsReady = () => !!(window.jspdf?.jsPDF && window.XLSX);
 
 function gate(run) {
   if (!libsReady()) { alert("Le module d'export n'est pas disponible (bibliothèques non chargées). Rechargez la page."); return; }
-  if (S.useExportCredit()) { try { run(); } catch (e) { console.error(e); alert("Erreur pendant l'export : " + (e?.message || e)); } return; }
-  openExportPaywall();
-}
-
-// Ouvre le paiement PayPal d'un crédit d'export. En cas de succès, le tunnel
-// recharge la page : il suffit ensuite de recliquer sur le bouton d'export.
-async function openExportPaywall() {
-  const err = await B.purchaseExport();
-  if (!err || err === "cancelled") return;
-  alert("Le paiement n'a pas abouti. Vérifiez votre connexion et réessayez." + (err === "sdk-missing" ? "" : " Détail : " + err));
+  try { run(); } catch (e) { console.error(e); alert("Erreur pendant l'export : " + (e?.message || e)); }
 }
 
 // ——— PDF ———
