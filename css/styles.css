@@ -343,4 +343,5 @@ input[type=checkbox].big { width: 18px; height: 18px; accent-color: var(--teal);
 }
 .ad-banner .ad-ico { font-size: 18px; }
 .ad-banner u { color: var(--gold); font-weight: 700; }
+.ad-banner ins.adsbygoogle { display: block; }
 @media (min-width: 900px) { .ad-banner { bottom: 0; padding-bottom: 10px; } }
